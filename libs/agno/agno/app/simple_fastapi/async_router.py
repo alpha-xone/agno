@@ -1,5 +1,3 @@
-import json
-from dataclasses import asdict
 from io import BytesIO
 from typing import AsyncGenerator, List, Optional, cast
 from uuid import uuid4
@@ -8,14 +6,13 @@ from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
 
 from agno.agent.agent import Agent, RunResponse
+from agno.app.playground.utils import process_audio, process_document, process_image, process_video
 from agno.media import Audio, Image, Video
 from agno.media import File as FileMedia
-from agno.app.playground.utils import process_audio, process_document, process_image, process_video
 from agno.run.response import RunEvent
 from agno.run.team import TeamRunResponse
 from agno.team.team import Team
 from agno.utils.log import logger
-from agno.workflow.workflow import Workflow
 
 
 async def agent_chat_response_streamer(
@@ -84,25 +81,20 @@ async def team_chat_response_streamer(
         return
 
 
-def get_async_router(
-    agent: Optional[Agent] = None, workflow: Optional[Workflow] = None, team: Optional[Team] = None
-) -> APIRouter:
+def get_async_router(agent: Optional[Agent] = None, team: Optional[Team] = None) -> APIRouter:
     router = APIRouter()
 
-    if agent is None and workflow is None and team is None:
-        raise ValueError("Either agent, workflow or team must be provided.")
-
+    if agent is None and team is None:
+        raise ValueError("Either agent or team must be provided.")
 
     @router.get("/status")
     async def status():
         return {"status": "available"}
 
-
     async def agent_process_file(
         files: List[UploadFile],
         agent: Agent,
     ):
-        
         base64_images: List[Image] = []
         base64_audios: List[Audio] = []
         base64_videos: List[Video] = []
@@ -154,7 +146,7 @@ def get_async_router(
                     pdf_file.name = file.filename
                     file_content = PDFReader().read(pdf_file)
                     if agent.knowledge is not None:
-                        await agent.knowledge.aload_documents(file_content)
+                        await agent.knowledge.async_load_documents(file_content)
                 elif file.content_type == "text/csv":
                     from agno.document.reader.csv_reader import CSVReader
 
@@ -163,7 +155,7 @@ def get_async_router(
                     csv_file.name = file.filename
                     file_content = CSVReader().read(csv_file)
                     if agent.knowledge is not None:
-                        await agent.knowledge.aload_documents(file_content)
+                        await agent.knowledge.async_load_documents(file_content)
                 elif file.content_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
                     from agno.document.reader.docx_reader import DocxReader
 
@@ -172,7 +164,7 @@ def get_async_router(
                     docx_file.name = file.filename
                     file_content = DocxReader().read(docx_file)
                     if agent.knowledge is not None:
-                        await agent.knowledge.aload_documents(file_content)
+                        await agent.knowledge.async_load_documents(file_content)
                 elif file.content_type == "text/plain":
                     from agno.document.reader.text_reader import TextReader
 
@@ -181,7 +173,7 @@ def get_async_router(
                     text_file.name = file.filename
                     file_content = TextReader().read(text_file)
                     if agent.knowledge is not None:
-                        await agent.knowledge.aload_documents(file_content)
+                        await agent.knowledge.async_load_documents(file_content)
 
                 elif file.content_type == "application/json":
                     from agno.document.reader.json_reader import JSONReader
@@ -191,10 +183,10 @@ def get_async_router(
                     json_file.name = file.filename
                     file_content = JSONReader().read(json_file)
                     if agent.knowledge is not None:
-                        await agent.knowledge.aload_documents(file_content)
+                        await agent.knowledge.async_load_documents(file_content)
                 else:
                     raise HTTPException(status_code=400, detail="Unsupported file type")
-            
+
         return base64_images, base64_audios, base64_videos
 
     def team_process_file(
@@ -254,7 +246,7 @@ def get_async_router(
         return base64_images, base64_audios, base64_videos, document_files
 
     @router.post("/run")
-    async def run_agent_team_or_workflow(
+    async def run_agent_team(
         message: str = Form(...),
         stream: bool = Form(False),
         monitor: bool = Form(False),
@@ -262,23 +254,22 @@ def get_async_router(
         user_id: Optional[str] = Form(None),
         files: Optional[List[UploadFile]] = File(None),
     ):
-
         if session_id is not None and session_id != "":
             logger.debug(f"Continuing session: {session_id}")
         else:
             logger.debug("Creating new session")
             session_id = str(uuid4())
 
-        if monitor:
-            agent.monitoring = True
-        else:
-            agent.monitoring = False
-
-        new_workflow_instance = None
-        if workflow:
-            new_workflow_instance = workflow.deep_copy(update={"session_id": session_id})
-            new_workflow_instance.user_id = user_id
-            new_workflow_instance.session_name = None
+        if agent:
+            if monitor:
+                agent.monitoring = True
+            else:
+                agent.monitoring = False
+        elif team:
+            if monitor:
+                team.monitoring = True
+            else:
+                team.monitoring = False
 
         base64_images: List[Image] = []
         base64_audios: List[Audio] = []
@@ -318,12 +309,6 @@ def get_async_router(
                     ),
                     media_type="text/event-stream",
                 )
-            elif workflow:
-                # Return as a streaming response
-                return StreamingResponse(
-                    (json.dumps(asdict(result)) for result in new_workflow_instance.run(message)),
-                    media_type="text/event-stream",
-                )
         else:
             if agent:
                 run_response = cast(
@@ -338,8 +323,9 @@ def get_async_router(
                         stream=False,
                     ),
                 )
+                return run_response.to_dict()
             elif team:
-                run_response = await team.arun(
+                team_run_response = await team.arun(
                     message=message,
                     session_id=session_id,
                     user_id=user_id,
@@ -349,8 +335,6 @@ def get_async_router(
                     files=document_files if document_files else None,
                     stream=False,
                 )
-            elif workflow:
-                run_response = new_workflow_instance.run(message)
-            return run_response.to_dict()
+                return team_run_response.to_dict()
 
     return router

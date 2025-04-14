@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from agno.utils.log import logger
 
 
-def serve_fastapi_app(
+def serve_whatsapp_app(
     app: Union[str, FastAPI],
     *,
     host: str = "localhost",

@@ -1,8 +1,7 @@
 from agno.agent import Agent
 from agno.app.simple_fastapi.app import SimpleFastAPI
+from agno.app.simple_fastapi.serve import serve_fastapi_app
 from agno.models.openai import OpenAIChat
-from agno.app.simple_fastapi.serve import serve_api_app
-
 
 basic_agent = Agent(
     name="Basic Agent",
@@ -18,4 +17,4 @@ app = SimpleFastAPI(
 ).get_app()
 
 if __name__ == "__main__":
-    serve_api_app("basic:app", port=8001, reload=True)
+    serve_fastapi_app(app, port=8001, reload=True)

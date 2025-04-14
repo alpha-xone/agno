@@ -128,4 +128,3 @@ class Playground:
             return
 
         self.endpoints_created.add(endpoint)
-
