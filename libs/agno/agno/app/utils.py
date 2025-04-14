@@ -1,4 +1,5 @@
 from typing import Optional
+from uuid import uuid4
 
 from fastapi import HTTPException, UploadFile
 
@@ -44,3 +45,10 @@ def process_document(file: UploadFile) -> Optional[FileMedia]:
     except Exception as e:
         logger.error(f"Error processing document {file.filename}: {e}")
         return None
+
+
+def generate_id(name: Optional[str] = None) -> str:
+    if name:
+        return name.lower().replace(" ", "-").replace("_", "-")
+    else:
+        return str(uuid4())

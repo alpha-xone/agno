@@ -9,7 +9,7 @@ from agno.agent import Agent
 from agno.memory.agent import AgentMemory
 from agno.memory.team import TeamMemory
 from agno.memory.v2 import Memory
-from agno.playground.operator import format_tools
+from agno.app.playground.operator import format_tools
 from agno.team import Team
 
 
