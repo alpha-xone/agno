@@ -5,8 +5,8 @@ from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import PlainTextResponse
 from agno.agent.agent import Agent, RunResponse
 from agno.team.team import Team
-from security import validate_webhook_signature
-from wappreq import VERIFY_TOKEN
+from .security import validate_webhook_signature
+from .wappreq import VERIFY_TOKEN
 logger = logging.getLogger(__name__)
 def get_async_router(agent: Optional[Agent] = None, team: Optional[Team] = None) -> APIRouter:
     router = APIRouter()
@@ -73,8 +73,8 @@ def get_async_router(agent: Optional[Agent] = None, team: Optional[Team] = None)
                     logger.info(f"Processing message from {phone_number}: {message_text}")
 
                     # Generate and send response
-                    response = agent.run(message_text)
-                    agent.tools[0].send_text_message_async(
+                    response = agent.run(message_text,user_id=phone_number)
+                    agent.tools[0].send_text_message_sync(
                         recipient=phone_number, text=response.content
                     )
                     logger.info(f"Response sent to {phone_number}")
