@@ -8,6 +8,7 @@ from agno.memory.v2.db.sqlite import SqliteMemoryDb
 from agno.memory.v2.memory import Memory
 from agno.models.openai import OpenAIChat
 from agno.storage.agent.sqlite import SqliteAgentStorage
+from agno.memory.v2.manager import MemoryManager
 from agno.storage.sqlite import SqliteStorage
 from agno.tools.duckduckgo import DuckDuckGoTools
 from agno.tools.youtube import YouTubeTools
@@ -15,8 +16,15 @@ from agno.tools.whatsapp import WhatsAppTools
 
 memory_db = SqliteMemoryDb(table_name="memory", db_file="tmp/memory.db")
 
-memory = Memory(db=memory_db)
-
+memory = Memory(db=memory_db, memory_manager=MemoryManager(
+        memory_capture_instructions="""\
+                    - Collect Information about the user's career and acaedemic goals
+                    - Collect Information about the user's previous acaedemic and learning experiences
+                    - Collect Information about the user's current knowledge
+                    - Collect Information about the user's hobbies and passions
+                    - Collect Information about the user's likes and dislikes
+                    """,
+    ),)
 
 StudyBuddy = Agent(
     name="StudyBuddy",

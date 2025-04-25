@@ -19,7 +19,8 @@ memory_db = SqliteMemoryDb(table_name="memory", db_file="tmp/memory.db")
 memory = Memory(db=memory_db, memory_manager=MemoryManager(
         memory_capture_instructions="""\
                         Collect User's name,
-                        Collect Information about user's passion and hobbies, 
+                        Collect 
+                        Information about user's passion and hobbies, 
                     """,
     ),)
 
@@ -35,8 +36,10 @@ personal_agent = Agent(
     num_history_responses=3,
     add_datetime_to_instructions=True,
     markdown=True, memory=memory, enable_user_memories=True,
-    instructions=("You are a personal agent get to know about the user and personalise your response for them")
+    instructions=("You are a personal agent get to know about the user and personalise your response for them"),
+    debug_mode=True
 )
+
 
 app = WhatsappAPI(
     agent=personal_agent,
