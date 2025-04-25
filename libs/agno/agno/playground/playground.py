@@ -1,4 +1,6 @@
-from typing import List, Optional, Set
+import asyncio
+import threading
+from typing import Any, Dict, List, Optional, Set
 from uuid import uuid4
 
 from fastapi import FastAPI, HTTPException
@@ -13,7 +15,7 @@ from agno.playground.async_router import get_async_playground_router
 from agno.playground.settings import PlaygroundSettings
 from agno.playground.sync_router import get_sync_playground_router
 from agno.team.team import Team
-from agno.utils.log import logger
+from agno.utils.log import log_debug, logger
 from agno.workflow.workflow import Workflow
 
 
@@ -26,6 +28,11 @@ class Playground:
         settings: Optional[PlaygroundSettings] = None,
         api_app: Optional[FastAPI] = None,
         router: Optional[APIRouter] = None,
+        app_id: Optional[str] = None,
+        name: Optional[str] = None,
+        scheme: str = "http",
+        host: str = "localhost",
+        port: int = 7777,
     ):
         if not agents and not workflows and not teams:
             raise ValueError("Either agents, teams or workflows must be provided.")
@@ -53,6 +60,29 @@ class Playground:
         self.api_app: Optional[FastAPI] = api_app
         self.router: Optional[APIRouter] = router
         self.endpoints_created: Set[str] = set()
+        self.app_id: Optional[str] = app_id
+        self.name: Optional[str] = name
+        self.scheme: str = scheme
+        self.host: str = host
+        self.port: int = port
+
+    def set_app_id(self) -> str:
+        if self.app_id is None:
+            app_id_parts = []
+            if self.agents and self.agents is not None:
+                app_id_parts.append(f"agent-{self.agents[0].agent_id}")
+            if self.teams and self.teams is not None:
+                app_id_parts.append(f"team-{self.teams[0].team_id}")
+            if self.workflows and self.workflows is not None:
+                app_id_parts.append(f"workflow-{self.workflows[0].workflow_id}")
+
+            if app_id_parts:
+                self.app_id = "-".join(app_id_parts)
+            else:
+                self.app_id = str(uuid4())
+        else:
+            self.app_id = str(uuid4())
+        return self.app_id
 
     def get_router(self) -> APIRouter:
         return get_sync_playground_router(self.agents, self.workflows, self.teams)
@@ -110,7 +140,13 @@ class Playground:
             allow_headers=["*"],
             expose_headers=["*"],
         )
+        print("ENDPOINT CREATED", self.endpoints_created)
+        self.set_app_id()
+        self.create_endpoint(f"{self.scheme}://{self.host}:{self.port}")
+        thread = threading.Thread(target=self.register_app_on_platform)
+        thread.start()
 
+        # asyncio.create_task(self.aregister_app_on_platform())
         return self.api_app
 
     def create_endpoint(self, endpoint: str, prefix: str = "/v1") -> None:
@@ -128,6 +164,41 @@ class Playground:
             return
 
         self.endpoints_created.add(endpoint)
+        print("ENDPOINT CREATED", self.endpoints_created)
+
+    def register_app_on_platform(self) -> None:
+        from agno.api.app import AppCreate, create_app
+
+        try:
+            print(f"Creating Agent on Platform: {self.name}, {self.app_id}")
+            # print("HERE", self.playground_to_dict())
+            create_app(app=AppCreate(name=self.name, app_id=self.app_id, config=self.playground_to_dict()))
+        except Exception as e:
+            log_debug(f"Could not create Agent app: {e}")
+        log_debug(f"Agent app created: {self.name}, {self.app_id}")
+
+    async def aregister_app_on_platform(self) -> None:
+        self.set_monitoring()
+        if not self.monitoring:
+            return
+
+        from agno.api.app import AppCreate, acreate_app
+
+        try:
+            log_debug(f"Creating App on Platform: {self.name}, {self.agent_id}, {self.team_id},")
+            await acreate_app(app=AppCreate(name=self.name, app_id=self.app_id, config=self.playground_to_dict()))
+
+        except Exception as e:
+            log_debug(f"Could not create App: {e}")
+        log_debug(f"App created: {self.name}, {self.agent_id}, {self.team_id},")
+
+    def playground_to_dict(self) -> Dict[str, Any]:
+        payload = {
+            "agents": [agent.get_agent_config_dict() for agent in self.agents],
+            "teams": [team.to_platform_dict() for team in self.teams],
+            "endpoints": list(self.endpoints_created),
+        }
+        return payload
 
 
 def generate_id(name: Optional[str] = None) -> str:
