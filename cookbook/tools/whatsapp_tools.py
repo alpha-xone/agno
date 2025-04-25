@@ -31,9 +31,8 @@ For more complex use cases, check out the WhatsApp Cloud API documentation:
 """
 
 from agno.agent import Agent
-from agno.tools.whatsapp import WhatsAppTools
 from agno.models.google import Gemini
-
+from agno.tools.whatsapp import WhatsAppTools
 
 agent = Agent(
     name="whatsapp",

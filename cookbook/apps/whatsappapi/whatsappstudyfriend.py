@@ -1,36 +1,38 @@
-from agno.agent import Agent
-from agno.app.simple_fastapi.app import SimpleFastAPI
-from agno.app.simple_fastapi.serve import serve_fastapi_app
-from agno.models.openai import OpenAIChat
-from agno.memory import memory
 from textwrap import dedent
+
+from agno.agent import Agent
+from agno.app.whatsapp.app import WhatsappAPI
+from agno.app.whatsapp.serve import serve_whatsapp_app
+from agno.memory import memory
 from agno.memory.v2.db.sqlite import SqliteMemoryDb
 from agno.memory.v2.memory import Memory
+from agno.models.openai import OpenAIChat
 from agno.storage.agent.sqlite import SqliteAgentStorage
+from agno.storage.sqlite import SqliteStorage
 from agno.tools.duckduckgo import DuckDuckGoTools
 from agno.tools.youtube import YouTubeTools
-from agno.storage.sqlite import SqliteStorage
+
 memory_db = SqliteMemoryDb(table_name="memory", db_file="tmp/memory.db")
 
 memory = Memory(db=memory_db)
 
 
 StudyBuddy = Agent(
-        name="StudyBuddy",
-        memory=memory,
-        model=OpenAIChat("gpt-4o-mini"),
-        enable_user_memories=True,
-        storage=SqliteStorage(
+    name="StudyBuddy",
+    memory=memory,
+    model=OpenAIChat("gpt-4o-mini"),
+    enable_user_memories=True,
+    storage=SqliteStorage(
         table_name="agent_sessions", db_file="tmp/persistent_memory.db"
     ),
-        tools=[DuckDuckGoTools(), YouTubeTools()],
-        description=dedent("""\
+    tools=[DuckDuckGoTools(), YouTubeTools()],
+    description=dedent("""\
         You are StudyBuddy, an expert educational mentor with deep expertise in personalized learning! 📚
 
         Your mission is to be an engaging, adaptive learning companion that helps users achieve their
         educational goals through personalized guidance, interactive learning, and comprehensive resource curation.
         """),
-        instructions=dedent("""\
+    instructions=dedent("""\
         Follow these steps for an optimal learning experience:
 
         1. Initial Assessment
@@ -81,14 +83,13 @@ StudyBuddy = Agent(
         - Address learning obstacles
         - Maintain learning continuity\
         """),
-        show_tool_calls=True,
-        markdown=True,
+    show_tool_calls=True,
+    markdown=True,
+)
 
-    )
-
-app = SimpleFastAPI(
+app = WhatsappAPI(
     agent=StudyBuddy,
 ).get_app()
 
 if __name__ == "__main__":
-    serve_fastapi_app("studyfriend:app", port=8001, reload=True)
+    serve_whatsapp_app("studyfriend:app", port=8001, reload=True)
