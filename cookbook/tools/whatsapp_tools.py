@@ -32,14 +32,17 @@ For more complex use cases, check out the WhatsApp Cloud API documentation:
 
 from agno.agent import Agent
 from agno.tools.whatsapp import WhatsAppTools
+from agno.models.google import Gemini
+
 
 agent = Agent(
     name="whatsapp",
+    model=Gemini(id="gemini-2.0-flash"),
     tools=[WhatsAppTools()],
 )
 
 # Example: Send a template message
 # Note: Replace 'hello_world' with your actual template name
 agent.print_response(
-    "Send a template message using the 'hello_world' template in English"
+    "Send a template message using the 'hello_world' template in English to +91 9836079910"
 )

@@ -3,6 +3,7 @@ import os
 
 from agno.agent import Agent
 from agno.models.openai import OpenAIChat
+from agno.models.google import Gemini
 from agno.storage.agent.sqlite import SqliteAgentStorage
 from agno.tools.duckduckgo import DuckDuckGoTools
 from agno.tools.whatsapp import WhatsAppTools
@@ -39,7 +40,7 @@ def get_whatsapp_agent() -> Agent:
     # Create and return the agent
     return Agent(
         name="WhatsApp Assistant",
-        model=OpenAIChat(id="gpt-4o"),
+    model=Gemini(id="gemini-2.0-flash"),
         tools=[
             whatsapp,
             DuckDuckGoTools(),
