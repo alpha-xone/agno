@@ -79,7 +79,7 @@ def get_sync_router(agent: Optional[Agent] = None, team: Optional[Team] = None) 
                     agent.tools[0].send_text_message_sync(
                         recipient=phone_number, text=response.content
                     )
-                    logger.info(f"Response sent to {phone_number}")
+                    logger.info(f"Response \n {response.content} \n sent to {phone_number}")
 
             return {"status": "ok"}
 
