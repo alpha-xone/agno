@@ -58,7 +58,7 @@ from agno.utils.string import parse_response_model_str
 from agno.utils.timer import Timer
 
 
-@dataclass()
+@dataclass(init=False)
 class Agent:
     # --- Agent settings ---
     # Model for this Agent
