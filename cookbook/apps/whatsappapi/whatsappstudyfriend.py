@@ -11,6 +11,7 @@ from agno.storage.agent.sqlite import SqliteAgentStorage
 from agno.storage.sqlite import SqliteStorage
 from agno.tools.duckduckgo import DuckDuckGoTools
 from agno.tools.youtube import YouTubeTools
+from agno.tools.whatsapp import WhatsAppTools
 
 memory_db = SqliteMemoryDb(table_name="memory", db_file="tmp/memory.db")
 
@@ -25,7 +26,7 @@ StudyBuddy = Agent(
     storage=SqliteStorage(
         table_name="agent_sessions", db_file="tmp/persistent_memory.db"
     ),
-    tools=[DuckDuckGoTools(), YouTubeTools()],
+    tools=[WhatsAppTools(),DuckDuckGoTools(), YouTubeTools()],
     description=dedent("""\
         You are StudyBuddy, an expert educational mentor with deep expertise in personalized learning! 📚
 
@@ -92,4 +93,4 @@ app = WhatsappAPI(
 ).get_app()
 
 if __name__ == "__main__":
-    serve_whatsapp_app("studyfriend:app", port=8001, reload=True)
+    serve_whatsapp_app("whatsappstudyfriend:app", port=8000, reload=True)
