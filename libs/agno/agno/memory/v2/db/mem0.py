@@ -336,6 +336,7 @@ class Mem0Memory(AgnoMemory):
             agent_id=self.agent_id,
             session_id=self.session_id,
         )
+        if not isinstance(self.memories, dict): self.memories = {}
         for memory in memories:
             self.memories.setdefault(user_id, {})[memory.get('memory_id', '')] = to_user_memory(memory)
 
@@ -392,7 +393,7 @@ class Mem0Memory(AgnoMemory):
         messages: Optional[List[Message]] = None,
         user_id: Optional[str] = None,
         refresh_from_db: bool = True,
-    ) -> str:   # type: ignore
+    ) -> str:
         """Creates memories from message(s) and adds them to mem0.
         Currently Agno only sends user messages to the memory.
         Information would be missing when user and assistant having a back and forth conversation.
@@ -466,7 +467,7 @@ class Mem0Memory(AgnoMemory):
         if not self.memory_manager:
             raise ValueError('Memory manager not initialized')
 
-        user_id = self._user_id_(user_id=user_id)
+        user_id = self._user_id_(user_id)
         existing_memories = [
             {'memory_id': memory['id'], 'memory': memory['memory']}
             for memory in self.search(
