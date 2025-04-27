@@ -43,12 +43,13 @@ def process_messages(
     if (not messages and not message) or (message and messages):
         raise ValueError('You must provide either a message or a list of messages - not both.')
 
-    if messages:
+    if messages is not None and messages:
         return [
             {'role': message.role, 'content': message.content}
             if isinstance(message, Message)
             else {'role': 'user', 'content': message}
             for message in messages
+            if isinstance(message, Union[str, Message])
         ]
 
     if isinstance(message, str):
@@ -366,7 +367,7 @@ class Mem0Memory(AgnoMemory):
             message = memory
 
         # Adding message to mem0
-        res: List[dict] = add_messages(
+        res: List[Dict[str, str]] = add_messages(
             client=self.client,
             message=message,
             user_id=user_id,
@@ -387,7 +388,7 @@ class Mem0Memory(AgnoMemory):
     def create_user_memories(
         self,
         message: Optional[str] = None,
-        messages: Optional[List[Message]] = None,
+        messages: Optional[list[Union[str, Message]]] = None,
         user_id: Optional[str] = None,
         refresh_from_db: bool = True,
     ) -> str:
@@ -403,7 +404,7 @@ class Mem0Memory(AgnoMemory):
         user_id = self._user_id_(user_id)
 
         # Adding message(s) to mem0
-        res: List[dict] = add_messages(
+        res: List[Dict[str, str]] = add_messages(
             client=self.client,
             message=message,
             messages=messages,
@@ -424,7 +425,7 @@ class Mem0Memory(AgnoMemory):
     async def acreate_user_memories(
         self,
         message: Optional[str] = None,
-        messages: Optional[List[Message]] = None,
+        messages: Optional[list[Union[str, Message]]] = None,
         user_id: Optional[str] = None,
         refresh_from_db: bool = True,
     ) -> str:
@@ -435,7 +436,7 @@ class Mem0Memory(AgnoMemory):
             raise ValueError('`client` is not properly initiated.')
 
         # Adding message(s) to mem0
-        res: List[dict] = await aadd_messages(
+        res: List[Dict[str, str]] = await aadd_messages(
             client=self.client,
             message=message,
             messages=messages,
@@ -737,7 +738,7 @@ class Mem0MemoryManager(MemoryManager):
                 str: A message indicating if the memory was added successfully or not.
             """
             try:
-                res = add_messages(
+                res: List[Dict[str, str]] = add_messages(
                     client=client,
                     message=memory,
                     user_id=user_id,
@@ -761,7 +762,7 @@ class Mem0MemoryManager(MemoryManager):
                 str: A message indicating if the memory was updated successfully or not.
             """
             try:
-                res = client.update(memory_id=memory_id, data=memory)
+                res: dict = client.update(memory_id=memory_id, data=memory)
                 log_debug('Memory updated')
                 return res.get('message', 'Memory updated successfully')
             except Exception as e:
