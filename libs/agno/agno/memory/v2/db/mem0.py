@@ -336,7 +336,7 @@ class Mem0Memory(AgnoMemory):
             agent_id=self.agent_id,
             session_id=self.session_id,
         )
-        if self.memories is None: self.memories = {}
+        if self.memories is None: self.memories = {}    # type: ignore
         for memory in memories:
             self.memories.setdefault(user_id, {})[memory.get('memory_id', '')] = to_user_memory(memory)
 
@@ -387,7 +387,7 @@ class Mem0Memory(AgnoMemory):
         if not isinstance(res, list): return ''
         return self._refresh_memories_(memories=res, user_id=user_id)
 
-    def create_user_memories(
+    def create_user_memories(   # type: ignore
         self,
         message: Optional[str] = None,
         messages: Optional[List[Message]] = None,
