@@ -45,9 +45,9 @@ def process_messages(
 
     if messages:
         return [
-            {'role': 'user', 'content': message}
-            if isinstance(message, str)
-            else {'role': message.role, 'content': message.content}
+            {'role': message.role, 'content': message.content}
+            if isinstance(message, Message)
+            else {'role': 'user', 'content': message}
             for message in messages
         ]
 
@@ -63,7 +63,7 @@ def process_messages(
 def add_messages(
         client: Union[Memory, MemoryClient],
         message: Optional[Union[str, Message]] = None,
-        messages: Optional[List[Message]] = None,
+        messages: Optional[List[Union[str, Message]]] = None,
         user_id: Optional[str] = None,
         session_id: Optional[str] = None,
         agent_id: Optional[str] = None,
@@ -122,6 +122,26 @@ def add_messages(
 
     if isinstance(res, dict): return res.get('results', [])
     return res
+
+
+async def aadd_messages(
+        client: Union[Memory, MemoryClient],
+        message: Optional[Union[str, Message]] = None,
+        messages: Optional[List[Union[str, Message]]] = None,
+        user_id: Optional[str] = None,
+        session_id: Optional[str] = None,
+        agent_id: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+) -> List[Dict[str, str]]:
+    """Add memory to Mem0"""
+    return await client.add_messages(
+        message=message,
+        messages=messages,
+        user_id=user_id,
+        session_id=session_id,
+        agent_id=agent_id,
+        metadata=metadata,
+    )
 
 
 def to_user_memory(memory: dict) -> UserMemory:
@@ -187,11 +207,11 @@ class Mem0Memory(AgnoMemory):
 
     def set_model(self, model: Model) -> None:
         if self.memory_manager is None:
-            self.memory_manager = Mem0MemoryManager(model=deepcopy(model))
+            self.memory_manager: MemoryManager = Mem0MemoryManager(model=deepcopy(model))
         if self.memory_manager.model is None:
             self.memory_manager.model = deepcopy(model)
         if self.summary_manager is None:
-            self.summary_manager = SessionSummarizer(model=deepcopy(model))
+            self.summary_manager: SessionSummarizer = SessionSummarizer(model=deepcopy(model))
         if self.summary_manager.model is None:
             self.summary_manager.model = deepcopy(model)
 
@@ -235,6 +255,9 @@ class Mem0Memory(AgnoMemory):
                     'expiration_date': str, # if available,
                 }
         """
+        if not isinstance(self.client, (Memory, MemoryClient)):
+            raise ValueError('`client` is not properly initiated.')
+
         user_id = self._user_id_(user_id)
 
         manual_filter = {}
@@ -297,12 +320,14 @@ class Mem0Memory(AgnoMemory):
         # Mem0 requires one of the following to be provided: user_id, run_id, and agent_id
         # Need to find workaround to query all memories
         user_id = self._user_id_(user_id)
-        memories: List[UserMemory] = self.search(
+        memories: List[Dict[str, Any]] = self.search(
             query='Most recent or important history of the user',
             user_id=user_id,
             agent_id=self.agent_id,
             session_id=self.session_id,
         )
+        if not isinstance(self.memories, dict):
+            self.memories: Dict[str, Dict[str, UserMemory]] = {}
         for memory in memories:
             self.memories.setdefault(user_id, {})[memory.get('memory_id', '')] = to_user_memory(memory)
 
@@ -320,6 +345,9 @@ class Mem0Memory(AgnoMemory):
             str: Memory ID - for mem0 it is possible to return multiple memories from one input.
                 Will return the first memory ID from ths list of memories.
         """
+        if not isinstance(self.client, (Memory, MemoryClient)):
+            raise ValueError('`client` is not properly initiated.')
+
         user_id = self._user_id_(user_id)
 
         metadata = None
@@ -327,8 +355,7 @@ class Mem0Memory(AgnoMemory):
             # Update metadata from UserMemory and self
             message = memory.memory
             if memory.topics or memory.input or memory.last_updated:
-                if not isinstance(metadata, dict):
-                    metadata
+                metadata = {}
                 if memory.topics:
                     metadata['categories'] = memory.topics
                 if memory.input:
@@ -339,23 +366,23 @@ class Mem0Memory(AgnoMemory):
             message = memory
 
         # Adding message to mem0
-        res = add_messages(
+        res: List[dict] = add_messages(
             client=self.client,
             message=message,
             user_id=user_id,
+            session_id=self.session_id,
             agent_id=self.agent_id,
-            run_id=self.session_id,
             metadata=metadata,
         )
 
-        if isinstance(res, list):
-            # Update memory cache
-            for r in res:
-                self.memories.setdefault(user_id, {})[r['id']] = to_user_memory(r)
-            # Mem0 returns a list of memories and add them to the memory cache
-            # Only the first id will be returned
-            return res[0].get('id', '') if res else ''
-        return ''
+        if not isinstance(res, list): return ''
+        # Update memory cache
+        if not isinstance(self.memories, dict): self.memories = {}
+        for r in res:
+            self.memories.setdefault(user_id, {})[r.get('id', '')] = to_user_memory(r)
+        # Mem0 returns a list of memories and add them to the memory cache
+        # Only the first id will be returned
+        return res[0].get('id', '') if res else ''
 
     def create_user_memories(
         self,
@@ -369,10 +396,14 @@ class Mem0Memory(AgnoMemory):
         Information would be missing when user and assistant having a back and forth conversation.
         """
         self.set_log_level()
+
+        if not isinstance(self.client, (Memory, MemoryClient)):
+            raise ValueError('`client` is not properly initiated.')
+
         user_id = self._user_id_(user_id)
 
         # Adding message(s) to mem0
-        res = add_messages(
+        res: List[dict] = add_messages(
             client=self.client,
             message=message,
             messages=messages,
@@ -381,14 +412,14 @@ class Mem0Memory(AgnoMemory):
             agent_id=self.agent_id,
         )
 
-        if isinstance(res, list):
-            # Update memory cache
-            for r in res:
-                self.memories.setdefault(user_id, {})[r['id']] = to_user_memory(r)
-            # Mem0 returns a list of memories and add them to the memory cache
-            # Only the first id will be returned
-            return res[0].get('id', '') if res else ''
-        return ''
+        if isinstance(res, list): return ''
+        # Update memory cache
+        if not isinstance(self.memories, dict): self.memories = {}
+        for r in res:
+            self.memories.setdefault(user_id, {})[r['id']] = to_user_memory(r)
+        # Mem0 returns a list of memories and add them to the memory cache
+        # Only the first id will be returned
+        return res[0].get('id', '') if res else ''
 
     async def acreate_user_memories(
         self,
@@ -400,8 +431,11 @@ class Mem0Memory(AgnoMemory):
         """Creates memories from multiple messages and adds them to mem0."""
         self.set_log_level()
 
+        if not isinstance(self.client, (Memory, MemoryClient)):
+            raise ValueError('`client` is not properly initiated.')
+
         # Adding message(s) to mem0
-        res = await add_messages(
+        res: List[dict] = await aadd_messages(
             client=self.client,
             message=message,
             messages=messages,
@@ -410,14 +444,14 @@ class Mem0Memory(AgnoMemory):
             agent_id=self.agent_id,
         )
 
-        if isinstance(res, list):
-            # Update memory cache
-            for r in res:
-                self.memories.setdefault(user_id, {})[r['id']] = to_user_memory(r)
-            # Mem0 returns a list of memories and add them to the memory cache
-            # Only the first id will be returned
-            return res[0].get('id', '') if res else ''
-        return ''
+        if isinstance(res, list): return ''
+        # Update memory cache
+        if not isinstance(self.memories, dict): self.memories = {}
+        for r in res:
+            self.memories.setdefault(user_id, {})[r['id']] = to_user_memory(r)
+        # Mem0 returns a list of memories and add them to the memory cache
+        # Only the first id will be returned
+        return res[0].get('id', '') if res else ''
 
     def delete_user_memory(
         self,
@@ -429,6 +463,9 @@ class Mem0Memory(AgnoMemory):
         Args:
             memory_id (str): The id of the memory to delete
         """
+        if not isinstance(self.client, (Memory, MemoryClient)):
+            raise ValueError('`client` is not properly initiated.')
+
         try:
             self.client.delete(memory_id=memory_id)
         except IndexError:
@@ -441,8 +478,8 @@ class Mem0Memory(AgnoMemory):
 
         user_id = self._user_id_(user_id)
         existing_memories = [
-            {'memory_id': memory_id, 'memory': memory.memory}
-            for memory_id, memory in self.search(
+            {'memory_id': memory['id'], 'memory': memory['memory']}
+            for memory in self.search(
                 'Most recent or important history of the user',
                 user_id=user_id,
             )
@@ -467,8 +504,8 @@ class Mem0Memory(AgnoMemory):
 
         user_id = self._user_id_(user_id)
         existing_memories = [
-            {'memory_id': memory_id, 'memory': memory.memory}
-            for memory_id, memory in self.search(
+            {'memory_id': memory['id'], 'memory': memory['memory']}
+            for memory in self.search(
                 'Most recent or important history of the user',
                 user_id=user_id,
             )
@@ -490,6 +527,8 @@ class Mem0Memory(AgnoMemory):
 class Mem0MemoryManager(MemoryManager):
     """Model for Mem0 Memory Manager"""
 
+    client: Optional[Union[Memory, MemoryClient]] = None
+
     def create_or_update_memories(
         self,
         messages: List[Message],
@@ -501,6 +540,9 @@ class Mem0MemoryManager(MemoryManager):
         if self.model is None:
             log_error('No model provided for memory manager')
             return 'No model provided for memory manager'
+
+        if not isinstance(self.client, (Memory, MemoryClient)):
+            raise ValueError('`client` is not properly initiated.')
 
         log_debug('MemoryManager Start', center=True)
 
@@ -514,7 +556,7 @@ class Mem0MemoryManager(MemoryManager):
         self.add_tools_to_model(
             model_copy,
             self._get_db_tools(
-                user_id, input_string, enable_delete_memory=delete_memories, enable_clear_memory=clear_memories
+                self.client, user_id, input_string, enable_delete_memory=delete_memories, enable_clear_memory=clear_memories
             ),
         )
 
@@ -549,6 +591,9 @@ class Mem0MemoryManager(MemoryManager):
             log_error('No model provided for memory manager')
             return 'No model provided for memory manager'
 
+        if not isinstance(self.client, (Memory, MemoryClient)):
+            raise ValueError('`client` is not properly initiated.')
+
         log_debug('MemoryManager Start', center=True)
 
         if len(messages) == 1:
@@ -561,7 +606,7 @@ class Mem0MemoryManager(MemoryManager):
         self.add_tools_to_model(
             model_copy,
             self._get_db_tools(
-                user_id, input_string, enable_delete_memory=delete_memories, enable_clear_memory=clear_memories
+                self.client, user_id, input_string, enable_delete_memory=delete_memories, enable_clear_memory=clear_memories
             ),
         )
 
@@ -596,6 +641,9 @@ class Mem0MemoryManager(MemoryManager):
             log_error('No model provided for memory manager')
             return 'No model provided for memory manager'
 
+        if not isinstance(self.client, (Memory, MemoryClient)):
+            raise ValueError('`client` is not properly initiated.')
+
         log_debug('MemoryManager Start', center=True)
 
         model_copy = deepcopy(self.model)
@@ -603,7 +651,7 @@ class Mem0MemoryManager(MemoryManager):
         self.add_tools_to_model(
             model_copy,
             self._get_db_tools(
-                user_id, task, enable_delete_memory=delete_memories, enable_clear_memory=clear_memories
+                self.client, user_id, task, enable_delete_memory=delete_memories, enable_clear_memory=clear_memories
             ),
         )
 
@@ -637,6 +685,9 @@ class Mem0MemoryManager(MemoryManager):
             log_error('No model provided for memory manager')
             return 'No model provided for memory manager'
 
+        if not isinstance(self.client, (Memory, MemoryClient)):
+            raise ValueError('`client` is not properly initiated.')
+
         log_debug('MemoryManager Start', center=True)
 
         model_copy = deepcopy(self.model)
@@ -644,7 +695,7 @@ class Mem0MemoryManager(MemoryManager):
         self.add_tools_to_model(
             model_copy,
             self._get_db_tools(
-                user_id, task, enable_delete_memory=delete_memories, enable_clear_memory=clear_memories
+                self.client, user_id, task, enable_delete_memory=delete_memories, enable_clear_memory=clear_memories
             ),
         )
 
@@ -693,7 +744,7 @@ class Mem0MemoryManager(MemoryManager):
                     metadata={'input': input_string},
                 )
                 if len(res) == 1:
-                    log_debug(f"Memory added: {res['id']}")
+                    log_debug(f"Memory added: {res[0]['id']}")
                 elif len(res) > 1:
                     log_debug('Memory added:\n' + '\n'.join([r['id'] for r in res]))
                 return 'Memory added successfully'
