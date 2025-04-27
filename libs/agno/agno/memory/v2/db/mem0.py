@@ -305,11 +305,11 @@ class Mem0Memory(AgnoMemory):
             memories,
         ))
 
-    def _refresh_memories_(self, user_id: str, memories: List[dict]) -> str:
+    def _refresh_memories_(self, memories: List[Dict[str, Any]], user_id: Optional[str] = None) -> str:
         """Refresh memories and return the first non-empty memory id."""
         memory_id: str = ''
         # Update memory cache
-        if not isinstance(self.memories, dict): self.memories = {}
+        if self.memories is None: self.memories = {}    # type: ignore
         for memory in memories:
             # Mem0 returns a list of memories and add them to the memory cache
             # Only the first non-empty id will be returned
@@ -336,8 +336,7 @@ class Mem0Memory(AgnoMemory):
             agent_id=self.agent_id,
             session_id=self.session_id,
         )
-        if not isinstance(self.memories, dict):
-            self.memories: Dict[str, Dict[str, UserMemory]] = {}
+        if self.memories is None: self.memories = {}
         for memory in memories:
             self.memories.setdefault(user_id, {})[memory.get('memory_id', '')] = to_user_memory(memory)
 
@@ -386,7 +385,7 @@ class Mem0Memory(AgnoMemory):
         )
 
         if not isinstance(res, list): return ''
-        return self._refresh_memories_(user_id=user_id, memories=res)
+        return self._refresh_memories_(memories=res, user_id=user_id)
 
     def create_user_memories(
         self,
@@ -417,7 +416,7 @@ class Mem0Memory(AgnoMemory):
         )
 
         if not isinstance(res, list): return ''
-        return self._refresh_memories_(user_id=user_id, memories=res)
+        return self._refresh_memories_(memories=res, user_id=user_id)
 
     async def acreate_user_memories(
         self,
@@ -443,7 +442,7 @@ class Mem0Memory(AgnoMemory):
         )
 
         if not isinstance(res, list): return ''
-        return self._refresh_memories_(user_id=user_id, memories=res)
+        return self._refresh_memories_(memories=res, user_id=user_id)
 
     def delete_user_memory(
         self,
@@ -468,7 +467,7 @@ class Mem0Memory(AgnoMemory):
         if not self.memory_manager:
             raise ValueError('Memory manager not initialized')
 
-        user_id = self._user_id_(user_id)
+        user_id = self._user_id_(user_id=user_id)
         existing_memories = [
             {'memory_id': memory['id'], 'memory': memory['memory']}
             for memory in self.search(
