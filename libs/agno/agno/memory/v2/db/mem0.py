@@ -26,15 +26,15 @@ from agno.memory.v2.summarizer import SessionSummarizer
 def process_messages(
     message: Optional[Union[str, Message]] = None,
     messages: Optional[List[Message]] = None,
-) -> List[Dict[str, str]]:
+) -> List[Dict[str, Any]]:
     """Process message to Mem0 format.
         Do NOT pass `message` and `messages` at the same time.
         Currently only process texts - mem0 supports audio, images and files.
     Args:
         message (Optional[Union[str, Message]]): Message to process.
-        messages (Optional[List[Union[str, Message]]]): Messages to process.
+        messages (Optional[List[Message]]): Messages to process.
     Returns:
-        List[Dict[str, str]]: List of processed message of format:
+        List[Dict[str, Any]]: List of processed message of format:
             {
                 'role': 'user' or 'assistnat' or ...,
                 'content': 'Content of the message',
@@ -66,7 +66,7 @@ def add_messages(
     session_id: Optional[str] = None,
     agent_id: Optional[str] = None,
     metadata: Optional[Dict[str, Any]] = None,
-) -> List[Dict[str, str]]:
+) -> List[Dict[str, Any]]:
     """Add memory to Mem0
     Args:
         metadata (Optional[Dict[str, Any]]): Metadata to store with the memory.
@@ -75,7 +75,7 @@ def add_messages(
             This affects all mem0 functions - search, get_all, add, and etc.
             If there's error calling mem0 queries, will try again with extra info stored in metadata.
     Returns:
-        Dict[str, str]: List of responses from Mem0 (multiple entries may be created for one message) of format:
+        Dict[str, Any]: List of responses from Mem0 (multiple entries may be created for one message) of format:
             {
                 'id': 'Memory ID',
                 'event': 'ADD',
@@ -305,6 +305,18 @@ class Mem0Memory(AgnoMemory):
             memories,
         ))
 
+    def _refresh_memories_(self, user_id: str, memories: List[dict]) -> str:
+        """Refresh memories and return the first non-empty memory id."""
+        memory_id: str = ''
+        # Update memory cache
+        if not isinstance(self.memories, dict): self.memories = {}
+        for memory in memories:
+            # Mem0 returns a list of memories and add them to the memory cache
+            # Only the first non-empty id will be returned
+            if not memory_id: memory_id = memory['id']
+            self.memories.setdefault(user_id, {})[memory['id']] = to_user_memory(memory)
+        return memory_id
+
     def get_user_memories(
         self,
         user_id: Optional[str] = None,
@@ -364,7 +376,7 @@ class Mem0Memory(AgnoMemory):
             message = memory
 
         # Adding message to mem0
-        res: List[Dict[str, str]] = add_messages(
+        res: List[Dict[str, Any]] = add_messages(
             client=self.client,
             message=message,
             user_id=user_id,
@@ -373,21 +385,13 @@ class Mem0Memory(AgnoMemory):
             metadata=metadata,
         )
 
-        memory_id: str = ''
-        if isinstance(res, list):
-            # Update memory cache
-            if not isinstance(self.memories, dict): self.memories = {}
-            for r in res:
-                # Mem0 returns a list of memories and add them to the memory cache
-                # Only the first non-empty id will be returned
-                if not memory_id: memory_id = r.get('id', '')
-                self.memories.setdefault(user_id, {})[r.get('id', '')] = to_user_memory(r)
-        return memory_id
+        if not isinstance(res, list): return ''
+        return self._refresh_memories_(user_id=user_id, memories=res)
 
     def create_user_memories(
         self,
         message: Optional[str] = None,
-        messages: Optional[list[Union[str, Message]]] = None,
+        messages: Optional[List[Message]] = None,
         user_id: Optional[str] = None,
         refresh_from_db: bool = True,
     ) -> str:
@@ -403,7 +407,7 @@ class Mem0Memory(AgnoMemory):
         user_id = self._user_id_(user_id)
 
         # Adding message(s) to mem0
-        res: List[Dict[str, str]] = add_messages(
+        res: List[Dict[str, Any]] = add_messages(
             client=self.client,
             message=message,
             messages=messages,
@@ -412,21 +416,13 @@ class Mem0Memory(AgnoMemory):
             agent_id=self.agent_id,
         )
 
-        memory_id: str = ''
-        if isinstance(res, list):
-            # Update memory cache
-            if not isinstance(self.memories, dict): self.memories = {}
-            for r in res:
-                # Mem0 returns a list of memories and add them to the memory cache
-                # Only the first non-empty id will be returned
-                memory_id = r.get('id', '')
-                self.memories.setdefault(user_id, {})[r['id']] = to_user_memory(r)
-        return memory_id
+        if not isinstance(res, list): return ''
+        return self._refresh_memories_(user_id=user_id, memories=res)
 
     async def acreate_user_memories(
         self,
         message: Optional[str] = None,
-        messages: Optional[list[Union[str, Message]]] = None,
+        messages: Optional[list[Message]] = None,
         user_id: Optional[str] = None,
         refresh_from_db: bool = True,
     ) -> str:
@@ -437,7 +433,7 @@ class Mem0Memory(AgnoMemory):
             raise ValueError('`client` is not properly initiated.')
 
         # Adding message(s) to mem0
-        res: List[Dict[str, str]] = await aadd_messages(
+        res: List[Dict[str, Any]] = await aadd_messages(
             client=self.client,
             message=message,
             messages=messages,
@@ -446,14 +442,8 @@ class Mem0Memory(AgnoMemory):
             agent_id=self.agent_id,
         )
 
-        if isinstance(res, list): return ''
-        # Update memory cache
-        if not isinstance(self.memories, dict): self.memories = {}
-        for r in res:
-            self.memories.setdefault(user_id, {})[r['id']] = to_user_memory(r)
-        # Mem0 returns a list of memories and add them to the memory cache
-        # Only the first id will be returned
-        return res[0].get('id', '') if res else ''
+        if not isinstance(res, list): return ''
+        return self._refresh_memories_(user_id=user_id, memories=res)
 
     def delete_user_memory(
         self,
@@ -739,7 +729,7 @@ class Mem0MemoryManager(MemoryManager):
                 str: A message indicating if the memory was added successfully or not.
             """
             try:
-                res: List[Dict[str, str]] = add_messages(
+                res: List[Dict[str, Any]] = add_messages(
                     client=client,
                     message=memory,
                     user_id=user_id,
