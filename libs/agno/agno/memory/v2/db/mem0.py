@@ -49,7 +49,7 @@ def process_messages(
             if isinstance(message, Message)
             else {'role': 'user', 'content': message}
             for message in messages
-            if isinstance(message, Union[str, Message])
+            if isinstance(message, str) or isinstance(message, Message)
         ]
 
     if isinstance(message, str):
@@ -58,7 +58,7 @@ def process_messages(
     if isinstance(message, Message):
         return [{'role': message.role, 'content': message.content}]
 
-    raise ValueError('Either message or messages must be provided with.required format.')
+    raise ValueError('Either message or messages must be provided with required format.')
 
 
 def add_messages(
@@ -376,14 +376,16 @@ class Mem0Memory(AgnoMemory):
             metadata=metadata,
         )
 
-        if not isinstance(res, list): return ''
-        # Update memory cache
-        if not isinstance(self.memories, dict): self.memories = {}
-        for r in res:
-            self.memories.setdefault(user_id, {})[r.get('id', '')] = to_user_memory(r)
-        # Mem0 returns a list of memories and add them to the memory cache
-        # Only the first id will be returned
-        return res[0].get('id', '') if res else ''
+        memory_id = ''
+        if isinstance(res, list):
+            # Update memory cache
+            if not isinstance(self.memories, dict): self.memories = {}
+            for r in res:
+                # Mem0 returns a list of memories and add them to the memory cache
+                # Only the first non-empty id will be returned
+                if not memory_id: memory_id = r.get('id', '')
+                self.memories.setdefault(user_id, {})[r.get('id', '')] = to_user_memory(r)
+        return memory_id
 
     def create_user_memories(
         self,
@@ -413,14 +415,16 @@ class Mem0Memory(AgnoMemory):
             agent_id=self.agent_id,
         )
 
-        if isinstance(res, list): return ''
-        # Update memory cache
-        if not isinstance(self.memories, dict): self.memories = {}
-        for r in res:
-            self.memories.setdefault(user_id, {})[r['id']] = to_user_memory(r)
-        # Mem0 returns a list of memories and add them to the memory cache
-        # Only the first id will be returned
-        return res[0].get('id', '') if res else ''
+        memory_id = ''
+        if isinstance(res, list):
+            # Update memory cache
+            if not isinstance(self.memories, dict): self.memories = {}
+            for r in res:
+                # Mem0 returns a list of memories and add them to the memory cache
+                # Only the first non-empty id will be returned
+                memory_id = r.get('id', '')
+                self.memories.setdefault(user_id, {})[r['id']] = to_user_memory(r)
+        return memory_id
 
     async def acreate_user_memories(
         self,
