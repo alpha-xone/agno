@@ -24,8 +24,8 @@ from agno.memory.v2.summarizer import SessionSummarizer
 
 
 def process_messages(
-        message: Optional[Union[str, Message]] = None,
-        messages: Optional[List[Union[str, Message]]] = None,
+    message: Optional[Union[str, Message]] = None,
+    messages: Optional[List[Message]] = None,
 ) -> List[Dict[str, str]]:
     """Process message to Mem0 format.
         Do NOT pass `message` and `messages` at the same time.
@@ -46,10 +46,7 @@ def process_messages(
     if messages is not None and messages:
         return [
             {'role': message.role, 'content': message.content}
-            if isinstance(message, Message)
-            else {'role': 'user', 'content': message}
             for message in messages
-            if isinstance(message, str) or isinstance(message, Message)
         ]
 
     if isinstance(message, str):
@@ -62,13 +59,13 @@ def process_messages(
 
 
 def add_messages(
-        client: Union[Memory, MemoryClient],
-        message: Optional[Union[str, Message]] = None,
-        messages: Optional[List[Union[str, Message]]] = None,
-        user_id: Optional[str] = None,
-        session_id: Optional[str] = None,
-        agent_id: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+    client: Union[Memory, MemoryClient],
+    message: Optional[Union[str, Message]] = None,
+    messages: Optional[List[Message]] = None,
+    user_id: Optional[str] = None,
+    session_id: Optional[str] = None,
+    agent_id: Optional[str] = None,
+    metadata: Optional[Dict[str, Any]] = None,
 ) -> List[Dict[str, str]]:
     """Add memory to Mem0
     Args:
@@ -126,13 +123,13 @@ def add_messages(
 
 
 async def aadd_messages(
-        client: Union[Memory, MemoryClient],
-        message: Optional[Union[str, Message]] = None,
-        messages: Optional[List[Union[str, Message]]] = None,
-        user_id: Optional[str] = None,
-        session_id: Optional[str] = None,
-        agent_id: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+    client: Union[Memory, MemoryClient],
+    message: Optional[Union[str, Message]] = None,
+    messages: Optional[List[Message]] = None,
+    user_id: Optional[str] = None,
+    session_id: Optional[str] = None,
+    agent_id: Optional[str] = None,
+    metadata: Optional[Dict[str, Any]] = None,
 ) -> List[Dict[str, str]]:
     """Add memory to Mem0"""
     return await client.add_messages(
@@ -223,13 +220,13 @@ class Mem0Memory(AgnoMemory):
         return user_id
 
     def search(
-            self,
-            query: Optional[str] = None,
-            user_id: Optional[str] = None,
-            agent_id: Optional[str] = None,
-            session_id: Optional[str] = None,
-            limit: Optional[int] = None,
-            filters: Optional[Mapping[str, Any]] = None,
+        self,
+        query: Optional[str] = None,
+        user_id: Optional[str] = None,
+        agent_id: Optional[str] = None,
+        session_id: Optional[str] = None,
+        limit: Optional[int] = None,
+        filters: Optional[Mapping[str, Any]] = None,
     ) -> List[Dict[str, Any]]:
         """Get the related context for the user.
         Args:
@@ -309,9 +306,9 @@ class Mem0Memory(AgnoMemory):
         ))
 
     def get_user_memories(
-            self,
-            user_id: Optional[str] = None,
-            refresh_from_db: bool = True,     # always refresh from mem0
+        self,
+        user_id: Optional[str] = None,
+        refresh_from_db: bool = True,     # always refresh from mem0
     ) -> List[UserMemory]:
         """Get all memories for the user."""
         return [to_user_memory(memory) for memory in self.search(user_id=user_id)]
@@ -376,7 +373,7 @@ class Mem0Memory(AgnoMemory):
             metadata=metadata,
         )
 
-        memory_id = ''
+        memory_id: str = ''
         if isinstance(res, list):
             # Update memory cache
             if not isinstance(self.memories, dict): self.memories = {}
@@ -415,7 +412,7 @@ class Mem0Memory(AgnoMemory):
             agent_id=self.agent_id,
         )
 
-        memory_id = ''
+        memory_id: str = ''
         if isinstance(res, list):
             # Update memory cache
             if not isinstance(self.memories, dict): self.memories = {}
