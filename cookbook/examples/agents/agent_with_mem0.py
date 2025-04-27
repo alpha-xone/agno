@@ -15,7 +15,7 @@ else:
         'graph_store': {
             'provider': 'neo4j',
             'config': {
-                'url': f'bolt://localhost:7687',
+                'url': 'bolt://localhost:7687',
                 'username': 'neo4j',
                 'password': '00000000',
             }
@@ -30,7 +30,7 @@ else:
         'vector_store': {
             'provider': 'chroma',
             'config': {
-                'path': f'tmp/mme0.chroma',
+                'path': 'tmp/mme0.chroma',
                 'collection_name': 'memories',
             }
         },
