@@ -5,7 +5,7 @@ from copy import deepcopy
 
 from dataclasses import dataclass
 from contextlib import redirect_stdout, redirect_stderr
-from typing import Optional, Dict, List, Union, Mapping, Callable, Any
+from typing import cast, Optional, Dict, List, Union, Mapping, Callable, Any
 
 try:
     from mem0 import Memory, MemoryClient
@@ -209,6 +209,7 @@ class Mem0Memory(AgnoMemory):
         if self.memory_manager.model is None:
             self.memory_manager.model = deepcopy(model)
         # Use the same mem0 client
+        cast(Mem0MemoryManager, self.memory_manager)
         if self.memory_manager.client is None:
             self.memory_manager.client = self.client
         if self.summary_manager is None:
