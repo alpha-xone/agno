@@ -569,6 +569,10 @@ class Mem0MemoryManager(MemoryManager):
 
     client: Optional[Union[Memory, MemoryClient]] = None
 
+    def __init__(self, client: Optional[Union[Memory, MemoryClient]] = None, **kwargs):
+        super().__init__(**kwargs)
+        self.client = client
+
     def create_or_update_memories(
         self,
         messages: List[Message],
