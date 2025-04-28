@@ -86,7 +86,7 @@ def add_messages(
     kwargs = {'output_format': 'v1.1'} if isinstance(client, MemoryClient) else {}
 
     # Messages to be added to mem0
-    memories = process_messages(message=message, messages=messages)
+    messages = process_messages(message=message, messages=messages)
 
     res = []
     if user_id is None: user_id = 'default'
@@ -95,7 +95,7 @@ def add_messages(
     with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
         try:
             res = client.add(
-                messages=memories,
+                messages=messages,
                 user_id=user_id,
                 run_id=session_id,
                 agent_id=agent_id,
@@ -110,7 +110,7 @@ def add_messages(
                 if session_id: metadata['run_id'] = session_id
                 if agent_id: metadata['agent_id'] = agent_id
                 res = client.add(
-                    messages=memories,
+                    messages=messages,
                     user_id=user_id,
                     metadata=metadata,
                     **kwargs,
@@ -307,6 +307,7 @@ class Mem0Memory(AgnoMemory):
 
     def _refresh_memories_(self, memories: List[Dict[str, Any]], user_id: Optional[str] = None) -> str:
         """Refresh memories and return the first non-empty memory id."""
+        user_id = self._user_id_(user_id)
         memory_id: str = ''
         # Update memory cache
         if self.memories is None: self.memories = {}    # type: ignore
@@ -336,6 +337,7 @@ class Mem0Memory(AgnoMemory):
             agent_id=self.agent_id,
             session_id=self.session_id,
         )
+        if self.memories is None: self.memories = {}    # type: ignore
         if not isinstance(self.memories, dict): self.memories = {}
         for memory in memories:
             self.memories.setdefault(user_id, {})[memory.get('memory_id', '')] = to_user_memory(memory)
@@ -359,7 +361,7 @@ class Mem0Memory(AgnoMemory):
 
         user_id = self._user_id_(user_id)
 
-        metadata = None
+        metadata: Optional[Dict[str, Any]] = None
         if isinstance(memory, UserMemory):
             # Update metadata from UserMemory and self
             message = memory.memory
@@ -403,6 +405,9 @@ class Mem0Memory(AgnoMemory):
         if not isinstance(self.client, (Memory, MemoryClient)):
             raise ValueError('`client` is not properly initiated.')
 
+        if not isinstance(self.memory_manager, Mem0MemoryManager):
+            raise ValueError('`memory_manager` is not properly initiated.')
+
         user_id = self._user_id_(user_id)
 
         # Adding message(s) to mem0
@@ -413,6 +418,22 @@ class Mem0Memory(AgnoMemory):
             user_id=user_id,
             session_id=self.session_id,
             agent_id=self.agent_id,
+        )
+
+        if refresh_from_db:
+            self.refresh_from_db(user_id=user_id)
+
+        existing_memories = self.memories.get(user_id, {})  # type: ignore
+        existing_memories = [
+            {'memory_id': memory_id, 'memory': memory.memory}
+            for memory_id, memory in existing_memories.items()
+        ]
+        self.memory_manager.create_or_update_memories(  # type: ignore
+            messages=process_messages(message=message, messages=messages),
+            existing_memories=existing_memories,
+            user_id=user_id,
+            delete_memories=self.delete_memories,
+            clear_memories=self.clear_memories,
         )
 
         if not isinstance(res, list): return ''
@@ -431,6 +452,11 @@ class Mem0Memory(AgnoMemory):
         if not isinstance(self.client, (Memory, MemoryClient)):
             raise ValueError('`client` is not properly initiated.')
 
+        if not isinstance(self.memory_manager, Mem0MemoryManager):
+            raise ValueError('`memory_manager` is not properly initiated.')
+
+        user_id = self._user_id_(user_id)
+
         # Adding message(s) to mem0
         res: List[Dict[str, Any]] = await aadd_messages(
             client=self.client,
@@ -439,6 +465,22 @@ class Mem0Memory(AgnoMemory):
             user_id=user_id,
             session_id=self.session_id,
             agent_id=self.agent_id,
+        )
+
+        if refresh_from_db:
+            self.refresh_from_db(user_id=user_id)
+
+        existing_memories = self.memories.get(user_id, {})  # type: ignore
+        existing_memories = [
+            {'memory_id': memory_id, 'memory': memory.memory}
+            for memory_id, memory in existing_memories.items()
+        ]
+        await self.memory_manager.acreate_or_update_memories(  # type: ignore
+            messages=process_messages(message=message, messages=messages),
+            existing_memories=existing_memories,
+            user_id=user_id,
+            delete_memories=self.delete_memories,
+            clear_memories=self.clear_memories,
         )
 
         if not isinstance(res, list): return ''
@@ -469,11 +511,8 @@ class Mem0Memory(AgnoMemory):
 
         user_id = self._user_id_(user_id)
         existing_memories = [
-            {'memory_id': memory['id'], 'memory': memory['memory']}
-            for memory in self.search(
-                'Most recent or important history of the user',
-                user_id=user_id,
-            )
+            {'memory_id': memory_id, 'memory': memory.memory}
+            for memory_id, memory in self.memories.get(user_id, {}).items()
         ]
         # The memory manager updates the DB directly
         response = self.memory_manager.run_memory_task(  # type: ignore
@@ -495,11 +534,8 @@ class Mem0Memory(AgnoMemory):
 
         user_id = self._user_id_(user_id)
         existing_memories = [
-            {'memory_id': memory['id'], 'memory': memory['memory']}
-            for memory in self.search(
-                'Most recent or important history of the user',
-                user_id=user_id,
-            )
+            {'memory_id': memory_id, 'memory': memory.memory}
+            for memory_id, memory in self.memories.get(user_id, {}).items()
         ]
         # The memory manager updates the DB directly
         response = await self.memory_manager.arun_memory_task(  # type: ignore
