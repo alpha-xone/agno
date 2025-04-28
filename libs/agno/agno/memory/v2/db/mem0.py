@@ -208,6 +208,9 @@ class Mem0Memory(AgnoMemory):
             self.memory_manager: MemoryManager = Mem0MemoryManager(model=deepcopy(model))
         if self.memory_manager.model is None:
             self.memory_manager.model = deepcopy(model)
+        # Use the same mem0 client
+        if self.memory_manager.client is None:
+            self.memory_manager.client = self.client
         if self.summary_manager is None:
             self.summary_manager: SessionSummarizer = SessionSummarizer(model=deepcopy(model))
         if self.summary_manager.model is None:
@@ -428,8 +431,13 @@ class Mem0Memory(AgnoMemory):
             {'memory_id': memory_id, 'memory': memory.memory}
             for memory_id, memory in existing_memories.items()
         ]
+        if isinstance(messages, list) and messages and isinstance(messages[0], Message):
+            msgs = messages
+        else:
+            msgs = [Message(role='user', content=message)]
+
         self.memory_manager.create_or_update_memories(  # type: ignore
-            messages=process_messages(message=message, messages=messages),
+            messages=msgs,
             existing_memories=existing_memories,
             user_id=user_id,
             delete_memories=self.delete_memories,
@@ -475,8 +483,13 @@ class Mem0Memory(AgnoMemory):
             {'memory_id': memory_id, 'memory': memory.memory}
             for memory_id, memory in existing_memories.items()
         ]
+        if isinstance(messages, list) and messages and isinstance(messages[0], Message):
+            msgs = messages
+        else:
+            msgs = [Message(role='user', content=message)]
+
         await self.memory_manager.acreate_or_update_memories(  # type: ignore
-            messages=process_messages(message=message, messages=messages),
+            messages=msgs,
             existing_memories=existing_memories,
             user_id=user_id,
             delete_memories=self.delete_memories,
