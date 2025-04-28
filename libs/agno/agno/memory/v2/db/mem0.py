@@ -86,7 +86,7 @@ def add_messages(
     kwargs = {'output_format': 'v1.1'} if isinstance(client, MemoryClient) else {}
 
     # Messages to be added to mem0
-    messages = process_messages(message=message, messages=messages)
+    msgs = process_messages(message=message, messages=messages)
 
     res = []
     if user_id is None: user_id = 'default'
@@ -95,7 +95,7 @@ def add_messages(
     with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
         try:
             res = client.add(
-                messages=messages,
+                messages=msgs,
                 user_id=user_id,
                 run_id=session_id,
                 agent_id=agent_id,
@@ -110,7 +110,7 @@ def add_messages(
                 if session_id: metadata['run_id'] = session_id
                 if agent_id: metadata['agent_id'] = agent_id
                 res = client.add(
-                    messages=messages,
+                    messages=msgs,
                     user_id=user_id,
                     metadata=metadata,
                     **kwargs,
@@ -209,7 +209,7 @@ class Mem0Memory(AgnoMemory):
         if self.memory_manager.model is None:
             self.memory_manager.model = deepcopy(model)
         # Use the same mem0 client
-        cast(Mem0MemoryManager, self.memory_manager)
+        self.memory_manager = cast(Mem0MemoryManager, self.memory_manager)
         if self.memory_manager.client is None:
             self.memory_manager.client = self.client
         if self.summary_manager is None:
@@ -524,6 +524,8 @@ class Mem0Memory(AgnoMemory):
             raise ValueError('Memory manager not initialized')
 
         user_id = self._user_id_(user_id)
+        if self.memories is None:
+            self.memories = {}  # type: ignore
         existing_memories = [
             {'memory_id': memory_id, 'memory': memory.memory}
             for memory_id, memory in self.memories.get(user_id, {}).items()
@@ -547,6 +549,8 @@ class Mem0Memory(AgnoMemory):
             raise ValueError('Memory manager not initialized')
 
         user_id = self._user_id_(user_id)
+        if self.memories is None:
+            self.memories = {}  # type: ignore
         existing_memories = [
             {'memory_id': memory_id, 'memory': memory.memory}
             for memory_id, memory in self.memories.get(user_id, {}).items()
