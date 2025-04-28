@@ -386,12 +386,8 @@ class Mem0Memory(AgnoMemory):
         )
         if self.memories is None:
             self.memories = {}  # type: ignore
-        if not isinstance(self.memories, dict):
-            self.memories = {}
         for memory in memories:
-            self.memories.setdefault(user_id, {})[memory.get("memory_id", "")] = (
-                to_user_memory(memory)
-            )
+            self.memories.setdefault(user_id, {})[memory["id"]] = to_user_memory(memory)
 
     def add_user_memory(
         self,
