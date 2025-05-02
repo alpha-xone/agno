@@ -1,0 +1,175 @@
+defaults:
+  add_context: false
+  resolve_context: true
+
+  enable_agentic_memory: false
+  enable_user_memories: false
+  enable_session_summaries: false
+
+  add_history_to_messages: false
+  num_history_runs: 3
+
+  add_references: false
+  references_format: 'json'
+
+  show_tool_calls: true
+
+  reasoning: false
+  reasoning_min_steps: 1
+  reasoning_max_steps: 10
+
+  read_chat_history: false
+  search_knowledge: true
+  update_knowledge: false
+  read_tool_call_history: false
+
+  system_message_role: 'system'
+  create_default_system_message: true
+
+  markdown: false
+  add_datetime_to_instructions: false
+  add_state_in_messages: false
+
+  user_message_role: 'user'
+  create_default_user_message: true
+
+  retries: 0
+  delay_between_retries: 1
+  exponential_backoff: false
+
+  parse_response: true
+
+  use_json_mode: false
+
+  stream_intermediate_steps: false
+
+  respond_directly: false
+  add_transfer_instructions: true
+  team_response_separator: '\n'
+
+  debug_mode: false
+  monitoring: false
+  telemetry: true
+
+agent:
+  class: agno.agent.Agent
+  params:
+    # --- Agent settings ---
+    model: ${model}
+    name: ${name}
+    agent_id: ${agent_id}
+    introduction: ${instruction}
+
+    # --- User settings ---
+    user_id: ${user_id}
+
+    # --- Session settings ---
+    session_id: ${session_id}
+    session_name: ${session_name}
+    session_state: ${session_state}
+
+    # --- Agent Context ---
+    context: ${context}
+    add_context: ${add_context}
+    resolve_context: ${resolve_context}
+
+    # --- Agent Memory ---
+    memory: ${memory}
+    enable_agentic_memory: ${enable_agentic_memory}
+    enable_user_memories: ${enable_user_memories}
+    add_memory_references: ${add_memory_references}
+    enable_session_summaries: ${enable_session_summaries}
+    add_session_summary_references: ${add_session_summary_references}
+
+    # --- Agent History ---
+    add_history_to_messages: ${add_history_to_messages}
+    num_history_responses: ${num_history_responses}
+    num_history_runs: ${num_history_runs}
+
+    # --- Agent Knowledge ---
+    knowledge: ${knowledge}
+    add_references: ${add_references}
+    retriever: ${retriever}
+    references_format: ${references_format}
+
+    # --- Agent Storage ---
+    storage: ${storage}
+    extra_data: ${extra_data}
+
+    # --- Agent Tools ---
+    tools: ${tools}
+    show_tool_calls: ${show_tool_calls}
+    tool_call_limit: ${tool_call_limit}
+    tool_choice: ${tool_choice}
+    tool_hooks: ${tool_hooks}
+
+    # --- Agent Reasoning ---
+    reasoning: ${reasoning}
+    reasoning_model: ${reasoning_model}
+    reasoning_agent: ${reasoning_agent}
+    reasoning_min_steps: ${reasoning_min_steps}
+    reasoning_max_steps: ${reasoning_max_steps}
+
+    # --- Default tools ---
+    read_chat_history: ${read_chat_history}
+    search_knowledge: ${search_knowledge}
+    update_knowledge: ${update_knowledge}
+    read_tool_call_history: ${read_tool_call_history}
+
+    # --- System message settings ---
+    system_message: ${system_message}
+    system_message_role: ${system_message_role}
+    create_default_system_message: ${create_default_system_message}
+
+    # --- Settings for building the default system message ---
+    description: ${description}
+    goal: ${goal}
+    instructions: ${instructions}
+    expected_output: ${expected_output}
+    additional_context: ${additional_context}
+    markdown: ${markdown}
+    add_name_to_instructions: ${add_name_to_instructions}
+    add_datetime_to_instructions: ${add_datetime_to_instructions}
+    timezone_identifier: ${timezone_identifier}
+    add_state_in_messages: ${add_state_in_messages}
+
+    # --- Extra Messages ---
+    add_messages: ${add_messages}
+
+    # --- User message settings ---
+    user_message: ${user_message}
+    user_message_role: ${user_message_role}
+    create_default_user_message: ${create_default_user_message}
+
+    # --- Agent Response Settings ---
+    retries: ${retries}
+    delay_between_retries: ${delay_between_retries}
+    exponential_backoff: ${exponential_backoff}
+
+    # --- Agent Response Model Settings ---
+    response_model: ${response_model}
+    parse_response: ${parse_response}
+    structured_outputs: ${structured_outputs}
+    use_json_mode: ${use_json_mode}
+    save_response_to_file: ${save_response_to_file}
+
+    # --- Agent Streaming ---
+    stream: ${stream}
+    stream_intermediate_steps: ${stream_intermediate_steps}
+
+    # --- Agent Team ---
+    team: ${team}
+    team_data: ${team_data}
+    role: ${role}
+    respond_directly: ${respond_directly}
+    add_transfer_instructions: ${add_transfer_instructions}
+    team_response_separator: ${team_response_separator}
+
+    # team_session_id: ${team_session_id}
+    # team_id: ${team_id}
+    # team_session_state: ${team_session_state}
+
+    # --- Debug & Monitoring ---
+    debug_mode: ${debug_mode}
+    monitoring: ${monitoring}
+    telemetry: ${telemetry}

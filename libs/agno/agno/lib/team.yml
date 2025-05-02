@@ -1,0 +1,124 @@
+defaults:
+  mode: coordinate
+  add_state_in_messages: false
+  markdown: false
+  add_datetime_to_instructions: false
+  add_context: false
+  references_format: json
+
+  enable_agentic_context: false
+  share_member_interactions: false
+  get_member_information_tool: false
+  search_knowledge: true
+  read_team_history: false
+
+  use_json_mode: false
+  parse_response: true
+
+  enable_agentic_memory: false
+  enable_user_memories: false
+  enable_session_summaries: false
+
+  enable_team_history: false
+  num_history_runs: 3
+
+  reasoning: false
+  reasoning_min_steps: 1
+  reasoning_max_steps: 10
+
+  # --- Debug & Monitoring ---
+  debug_mode: false
+  show_members_responses: false
+  monitoring: false
+  telemetry: true
+
+team:
+  class: agno.team.Team
+  params:
+    members: ${members}
+    mode: ${mode}
+
+    # --- Team settings ---
+    name: ${name}
+    team_id: ${team_id}
+    # role: ${role}
+
+    # --- User settings ---
+    user_id: ${user_id}
+
+    # --- Session settings ---
+    session_id: ${session_id}
+    # team_session_id: ${team_session_id}
+    session_name: ${session_name}
+    session_state: ${session_state}
+    add_state_in_messages: ${add_state_in_messages}
+
+    # --- System message settings ---
+    description: ${description}
+    instructions: ${instructions}
+    expected_output: ${expected_output}
+    additional_context: ${additional_context}
+    markdown: ${markdown}
+    add_datetime_to_instructions: ${add_datetime_to_instructions}
+    add_member_tools_to_system_message: ${add_member_tools_to_system_message}
+
+    # --- Success criteria ---
+    success_criteria: ${success_criteria}
+
+    # --- User provided context ---
+    context: ${context}
+    add_context: ${add_context}
+
+    # --- Agent Knowledge ---
+    knowledge: ${knowledge}
+    retriever: ${retriever}
+    references_format: ${references_format}
+
+    # --- Tools ---
+    enable_agentic_context: ${enable_agentic_context}
+    share_member_interactions: ${share_member_interactions}
+    get_member_information_tool: ${get_member_information_tool}
+    search_knowledge: ${search_knowledge}
+
+    read_team_history: bool = False
+
+    # --- Team Tools ---
+    tools: ${tools}
+    show_tool_calls: ${show_tool_calls}
+    tool_choice: ${tool_choice}
+    tool_call_limit: ${tool_call_limit}
+    tool_hooks: ${tool_hooks}
+
+    # --- Structured output ---
+    response_model: ${response_model}
+    use_json_mode: ${use_json_mode}
+    parse_response: ${parse_response}
+
+    # --- History ---
+    memory: ${memory}
+    enable_agentic_memory: ${enable_agentic_memory}
+    enable_user_memories: ${enable_user_memories}
+    add_memory_references: ${add_memory_references}
+    enable_session_summaries: ${enable_session_summaries}
+    add_session_summary_references: ${add_session_summary_references}
+
+    # --- Team History ---
+    enable_team_history: ${enable_team_history}
+    num_of_interactions_from_history: ${num_of_interactions_from_history}
+    num_history_runs: ${num_history_runs}
+
+    # --- Team Storage ---
+    storage: ${storage}
+    extra_data: ${extra_data}
+
+    # --- Team Reasoning ---
+    reasoning: ${reasoning}
+    reasoning_model: ${reasoning_model}
+    reasoning_min_steps: ${reasoning_min_steps}
+    reasoning_max_steps: ${reasoning_max_steps}
+
+    # --- Debug & Monitoring ---
+    debug_mode: ${debug_mode}
+    show_members_responses: ${show_members_responses}
+    monitoring: ${monitoring}
+    telemetry: ${telemetry}

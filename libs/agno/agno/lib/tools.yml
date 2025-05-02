@@ -1,0 +1,38 @@
+defaults:
+  # Yahoo Finance defaults
+  stock_price: true
+  company_info: false
+  stock_fundamentals: false
+  income_statements: false
+  key_financial_ratios: false
+  analyst_recommendations: false
+  company_news: false
+  technical_indicators: false
+  historical_prices: false
+  enable_all: false
+
+  # Google Search defaults
+  timeout: 10
+
+yfinance:
+  class: agno.tools.yfinance.YFinanceTools
+  params:
+    stock_price: ${stock_price}
+    company_info: ${company_info}
+    stock_fundamentals: ${stock_fundamentals}
+    income_statements: ${income_statements}
+    key_financial_ratios: ${key_financial_ratios}
+    analyst_recommendations: ${analyst_recommendations}
+    company_news: ${company_news}
+    technical_indicators: ${technical_indicators}
+    historical_prices: ${historical_prices}
+    enable_all: ${enable_all}
+
+google:
+  class: agno.tools.googlesearch.GoogleSearchTools
+  params:
+    fixed_max_results: ${fixed_max_results}
+    fixed_language: ${fixed_language}
+    headers: ${headers}
+    proxy: ${proxy}
+    timeout: ${timeout}
