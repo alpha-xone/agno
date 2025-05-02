@@ -81,7 +81,7 @@ class SequentialWorkFlow(Workflow):
 
 def sequential_chain(
     left: Union[Agent, SequentialWorkFlow],
-    *others: Union[Agent, SequentialWorkFlow],
+    *others: Union[Agent, SequentialWorkFlow, List[Union[Agent, SequentialWorkFlow]]],
 ) -> Any:
     """
     Create a workflow that runs agents in sequence.
