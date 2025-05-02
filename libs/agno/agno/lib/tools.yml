@@ -11,8 +11,21 @@ defaults:
   historical_prices: false
   enable_all: false
 
-  # Google Search defaults
+  # Google / DuckDuckGo Search defaults
   timeout: 10
+
+  # DuckDuckGo Search defaults
+  search: true,
+  news: true,
+  verify_ssl: true
+
+  # Hacker News defaults
+  get_top_stories: true
+  get_user_details: true
+
+  # Arxiv defaults
+  search_arxiv: true
+  read_arxiv_papers: true
 
 yfinance:
   class: agno.tools.yfinance.YFinanceTools
@@ -36,3 +49,29 @@ google:
     headers: ${headers}
     proxy: ${proxy}
     timeout: ${timeout}
+
+duckduckgo:
+  class: agno.tools.duckduckgo.DuckDuckGoTools
+  params:
+    search: ${search}
+    news: ${news}
+    modifier: ${modifier}
+    fixed_max_results: ${fixed_max_results}
+    headers: ${headers}
+    proxy: ${proxy}
+    proxies: ${proxies}
+    timeout: ${timeout}
+    verify_ssl: ${verify_ssl}
+
+hackernews:
+  class: agno.tools.hackernews.HackerNewsTools
+  params:
+    get_top_stories: ${get_top_stories}
+    get_user_details: ${get_user_details}
+
+arxiv:
+  class: agno.tools.arxiv.ArxivTools
+  params:
+    search_arxiv: ${search_arxiv}
+    read_arxiv_papers: ${read_arxiv_papers}
+    download_dir: ${download_dir}
