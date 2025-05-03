@@ -1,3 +1,7 @@
+# Copy this file to your project and modify default settings as needed,
+# so that you don't need to append a list of parameters every time you create
+# agents, while keep the flexility of modifying the parameters for each agent.
+
 defaults:
   add_context: false
   resolve_context: true
@@ -10,7 +14,7 @@ defaults:
   num_history_runs: 3
 
   add_references: false
-  references_format: 'json'
+  references_format: json
 
   show_tool_calls: true
 
@@ -23,14 +27,14 @@ defaults:
   update_knowledge: false
   read_tool_call_history: false
 
-  system_message_role: 'system'
+  system_message_role: system
   create_default_system_message: true
 
   markdown: false
   add_datetime_to_instructions: false
   add_state_in_messages: false
 
-  user_message_role: 'user'
+  user_message_role: user
   create_default_user_message: true
 
   retries: 0
