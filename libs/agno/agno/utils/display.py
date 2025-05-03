@@ -4,7 +4,8 @@ from typing import Optional
 
 import yaml
 from rich import print
-from rich.pretty import pprint
+from rich.console import Console
+from rich.pretty import Pretty
 
 
 def custom_serializer(obj):
@@ -79,6 +80,7 @@ def display(instance, to_file: Optional[str] = None):
     # Recursively filter the instance's __dict__
     filtered_dict = filter_instance_dict(instance)
 
+    title = f"<{instance.__class__.__module__}.{instance.__class__.__name__}>"
     if to_file:
         ext = to_file.lower().split(".")[-1]
         if ext == "json":
@@ -94,6 +96,7 @@ def display(instance, to_file: Optional[str] = None):
         elif ext in [".yaml", "yml"]:
             # Write the filtered dictionary to a file in YAML format
             with open(to_file, "w", encoding="utf-8") as f:
+                f.write(f"# {title}\n")
                 yaml.dump(
                     data=filtered_dict,
                     stream=f,
@@ -105,6 +108,6 @@ def display(instance, to_file: Optional[str] = None):
             raise ValueError("Unsupported file format. Use 'json' or 'yml'.")
     else:
         # Display class name and filtered dictionary
-        cls = instance.__class__
-        print(f"[bold cyan]<{cls.__module__}.{cls.__name__}>[/bold cyan]")
-        pprint(filtered_dict)
+        console = Console()
+        print(f"[bold cyan]{title}[/bold cyan]")
+        console.print(Pretty(filtered_dict, indent_size=2))
