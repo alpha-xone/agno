@@ -135,9 +135,9 @@ def agno(
     if base_module is None:
         base_module = default_module
 
-    ext = ".yml" if file_type == "yaml" else ".json"
-    if file_path.rsplit(".")[-1] != ext:
-        file_path += ext
+    ext = ["yml", "yaml"] if file_type == "yaml" else ["json"]
+    if file_path.rsplit(".")[-1].lower() not in ext:
+        file_path += f".{ext[0]}"
     if not os.path.exists(file_path):
         inferred_path = os.path.join(os.path.dirname(script_dir), file_path)
         if os.path.exists(inferred_path):

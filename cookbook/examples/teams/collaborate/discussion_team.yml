@@ -1,0 +1,65 @@
+defaults:
+  model:
+    class: agno.models.openai.OpenAIChat
+    params:
+      id: gpt-4o
+
+reddit_researcher:
+  class: agno.agent.Agent
+  params:
+    name: Reddit Researcher
+    role: Research a topic on Reddit
+    model: ${model}
+    tools:
+      - class: agno.tools.duckduckgo.DuckDuckGoTools
+    add_name_to_instructions: true
+    instructions:
+      - You are a Reddit researcher.
+      - You will be given a topic to research on Reddit.
+      - You will need to find the most relevant posts on Reddit.
+
+hackernews_researcher:
+  class: agno.agent.Agent
+  params:
+    name: Hacker News Researcher
+    role: Research a topic on Hacker News
+    model: ${model}
+    tools:
+      - class: agno.tools.hackernews.HackerNewsTools
+    add_name_to_instructions: true
+    instructions:
+      - You are a Hacker News researcher.
+      - You will be given a topic to research on Hacker News.
+      - You will need to find the most relevant posts on Hacker News.
+
+academic_paper_researcher:
+  class: agno.agent.Agent
+  params:
+    name: Academic Paper Researcher
+    role: Research a topic in academic papers
+    model: ${model}
+    tools:
+      - class: agno.tools.googlesearch.GoogleSearchTools
+      - class: agno.tools.arxiv.ArxivTools
+    add_name_to_instructions: true
+    instructions:
+      - You are an academic paper researcher.
+      - You will be given a topic to research in academic papers.
+      - You will need to find the most relevant papers on Google Scholar and Arxiv.
+      - You will need to summarize the papers and provide the links to them.
+
+twitter_researcher:
+  class: agno.agent.Agent
+  params:
+    name: Twitter Researcher
+    role: Research a topic on Twitter
+    model: ${model}
+    tools:
+      - class: agno.tools.duckduckgo.DuckDuckGoTools
+    add_name_to_instructions: true
+    instructions:
+      - You are a Twitter/X researcher.
+      - You will be given a topic to research on Twitter/X.
+      - You will need to find trending discussions, influential voices, and real-time updates.
+      - Focus on verified accounts and credible sources when possible.
+      - Track relevant hashtags and ongoing conversations.

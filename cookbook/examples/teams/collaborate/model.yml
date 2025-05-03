@@ -1,0 +1,4 @@
+model:
+  class: agno.models.openai.OpenAIChat
+  params:
+    id: gpt-4o
