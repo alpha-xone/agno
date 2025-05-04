@@ -36,6 +36,7 @@ class SequentialWorkFlow(Workflow):
         all_responses: Dict[str, Any] = {}
 
         try:
+            final_response: RunResponse = RunResponse()
             messages = []
             # Iterate through the chain of agents
             for index, agent in enumerate(self.agents):
@@ -54,6 +55,7 @@ class SequentialWorkFlow(Workflow):
                 if not response or not hasattr(response, "content"):
                     raise ValueError(f"Agent '{key}' returned an invalid response.")
 
+                final_response = deepcopy(response)
                 messages.extend(response.messages or [])
 
                 # Serialize the response content
@@ -79,9 +81,6 @@ class SequentialWorkFlow(Workflow):
                 current_message = json.dumps(all_responses)
 
             # Return the final response
-            final_response: RunResponse = RunResponse()
-            if isinstance(self.agents[-1].run_response, RunResponse):
-                final_response = deepcopy(self.agents[-1].run_response)
             final_response.messages = messages
             return final_response
 
