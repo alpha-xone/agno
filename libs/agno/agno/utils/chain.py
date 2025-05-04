@@ -79,7 +79,9 @@ class SequentialWorkFlow(Workflow):
                 current_message = json.dumps(all_responses)
 
             # Return the final response
-            final_response: RunResponse = deepcopy(self.agents[-1].run_response)
+            final_response: RunResponse = RunResponse()
+            if isinstance(self.agents[-1].run_response, RunResponse):
+                final_response = deepcopy(self.agents[-1].run_response)
             final_response.messages = messages
             return final_response
 
