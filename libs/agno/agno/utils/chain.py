@@ -38,6 +38,8 @@ class SequentialWorkFlow(Workflow):
         try:
             final_response: RunResponse = RunResponse()
             messages = []
+            if isinstance(self.run_response, RunResponse):
+                messages = self.run_response.messages or []
             # Iterate through the chain of agents
             for index, agent in enumerate(self.agents):
                 key = agent.name or agent.agent_id or f"Agent_{index}"
@@ -82,6 +84,7 @@ class SequentialWorkFlow(Workflow):
 
             # Return the final response
             final_response.messages = messages
+            self.run_response = final_response
             return final_response
 
         except Exception as e:
