@@ -113,6 +113,6 @@ if __name__ == "__main__":
         | report_agent
     )
 
-    final_report = workflow.run(idea)
+    final_report = workflow.run_workflow(idea)
 
-    pprint(json.loads(final_report))
+    pprint(json.loads(final_report.content))
