@@ -23,7 +23,7 @@ class SequentialWorkFlow(Workflow):
     def __or__(self, *others) -> Any:
         return sequential_chain(self, *others)
 
-    def run(self, input_message: str) -> str:
+    def run(self, input_message: str) -> RunResponse:
         """
         Execute the sequential chain flow between multiple agents.
         Logs and raises errors if any agent's response is invalid.
