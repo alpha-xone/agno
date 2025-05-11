@@ -6,7 +6,7 @@ import httpx
 
 try:
     from openai import AsyncOpenAI as AsyncOpenAIClient
-except (ModuleNotFoundError, ImportError):
+except ImportError:
     raise ImportError("`openai` not installed. Please install using `pip install openai`")
 
 from agno.models.meta.llama import Message
@@ -33,6 +33,17 @@ class LlamaOpenAI(OpenAILike):
 
     api_key: Optional[str] = getenv("LLAMA_API_KEY")
     base_url: Optional[str] = "https://api.llama.com/compat/v1/"
+
+    # Request parameters
+    max_completion_tokens: Optional[int] = None
+    repetition_penalty: Optional[float] = None
+    temperature: Optional[float] = None
+    top_p: Optional[float] = None
+    top_k: Optional[int] = None
+    extra_headers: Optional[Any] = None
+    extra_query: Optional[Any] = None
+    extra_body: Optional[Any] = None
+    request_params: Optional[Dict[str, Any]] = None
 
     supports_native_structured_outputs: bool = False
     supports_json_schema_outputs: bool = True
